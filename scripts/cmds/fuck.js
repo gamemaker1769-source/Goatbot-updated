@@ -17,28 +17,34 @@ module.exports = {
   },
 
   onStart: async function ({ message, event, args }) {
-    const mention = Object.keys(event.mentions);
-    if (mention.length == 0) {
-      return message.reply("Please mention someone");
-    } else if (mention.length == 1) {
-      const one = event.senderID;
-      const two = mention[0];
-      bal(one, two).then(ptth => {
-        message.reply({ body: "「 Harder daddy 🥵💦 」", attachment: fs.createReadStream(ptth) });
-      }).catch(error => {
-        console.error(error);
-        message.reply("Failed to generate the image.");
-      });
+    let one, two;
+
+    if (event.type === "message_reply") {
+      one = event.senderID;
+      two = event.messageReply.senderID;
     } else {
-      const one = mention[1];
-      const two = mention[0];
-      bal(one, two).then(ptth => {
-        message.reply({ body: "", attachment: fs.createReadStream(ptth) });
-      }).catch(error => {
-        console.error(error);
-        message.reply("Failed to generate the image.");
-      });
+      const mention = Object.keys(event.mentions);
+      if (mention.length === 0) {
+        return message.reply("Please mention or reply to someone");
+      } else if (mention.length === 1) {
+        one = event.senderID;
+        two = mention[0];
+      } else {
+        one = mention[1];
+        two = mention[0];
+      }
     }
+
+    if (one === two) {
+      return message.reply("Cannot use the same person twice");
+    }
+
+    bal(one, two).then(ptth => {
+      message.reply({ body: "「 Harder daddy 🥵💦 」", attachment: fs.createReadStream(ptth) });
+    }).catch(error => {
+      console.error(error);
+      message.reply("Failed to generate the image.");
+    });
   }
 };
 
@@ -54,4 +60,4 @@ async function bal(one, two) {
 
   await img.writeAsync(pth);
   return pth;
-  }
+}
