@@ -11,31 +11,31 @@ module.exports = {
     role: 4 
   },
 
-  // বট চালু হওয়ার সাথে সাথে এই অংশটি আপনার আইডিতে মেসেজ পাঠাবে
+  // This function runs automatically when the bot finishes starting up
   onLoad: async function ({ api }) {
-    const myID = "100022952830933"; // আপনার দেওয়া আইডি
+    const myID = "100022952830933"; // Your Facebook UID
 
     console.log("Bot starting up... Checking for online status.");
     
-    // বট চালু হওয়ার ৫-৭ সেকেন্ড পর মেসেজ দিবে যেন সংযোগ পুরোপুরি তৈরি হয়
+    // Sends a message 7 seconds after startup to ensure connection is stable
     setTimeout(() => {
-      api.sendMessage("✅ **Bot is Online!**\n\nআপনার সার্ভিসটি সফলভাবে রিস্টার্ট হয়েছে এবং সব নতুন ফাইল লোড করা হয়েছে।", myID);
+      api.sendMessage("✅ **Bot is Online!**\n\nYour service has been successfully restarted, and all new files/commands have been loaded.", myID);
     }, 7000);
   },
 
   onStart: async function ({ api, event }) {
-    const RENDER_API_KEY = process.env.Render_API_TOKEN; 
-    const SERVICE_ID = "srv-d6790rp5pdvs73e976hg"; 
+    const RENDER_API_KEY = process.env.Render_API_TOKEN; // Fetches from Render Environment Variables
+    const SERVICE_ID = "srv-d6790rp5pdvs73e976hg"; // Your specific Service ID
 
     if (!RENDER_API_KEY) {
-      return api.sendMessage("❌ Error: 'Render_API_TOKEN' পাওয়া যায়নি। Render ড্যাশবোর্ড থেকে একবার Manual Deploy দিন।", event.threadID);
+      return api.sendMessage("❌ Error: 'Render_API_TOKEN' not found. Please perform a manual deploy from the Render Dashboard once.", event.threadID);
     }
 
     try {
-      // রিস্টার্ট শুরু হওয়ার মেসেজ
-      await api.sendMessage("⏳ **Bot is restarting...**\n\nPlease wait. ২-৩ মিনিট সময় লাগতে পারে। অনলাইনে আসলে আমি আপনাকে পার্সোনালি মেসেজ দিচ্ছি।", event.threadID);
+      // Pre-restart notification
+      await api.sendMessage("⏳ **Bot is restarting...**\n\nPlease wait. This usually takes 2-3 minutes. I will send you a personal message once I am back online.", event.threadID);
 
-      // Render API-তে ক্লিয়ার ক্যাশ এবং নতুন ডিপ্লয় রিকোয়েস্ট
+      // Sending the request to Render API to clear cache and redeploy
       await axios.post(`https://api.render.com/v1/services/${SERVICE_ID}/deploys`, 
       { clearCache: "clear" }, 
       {
