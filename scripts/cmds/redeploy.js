@@ -4,38 +4,38 @@ module.exports = {
   config: {
     name: "redeploy",
     aliases: ["restart", "refresh"],
-    version: "5.5",
+    version: "6.0",
     author: "Light",
     shortDescription: "Restarts the bot and notifies you when online",
     category: "owner",
     role: 4 
   },
 
-  // This function runs automatically when the bot finishes starting up
+  // This triggers as soon as the bot finishes loading all scripts
   onLoad: async function ({ api }) {
     const myID = "100022952830933"; // Your Facebook UID
 
-    console.log("Bot starting up... Checking for online status.");
+    console.log("System reboot complete. Initializing online notification...");
     
-    // Sends a message 7 seconds after startup to ensure connection is stable
+    // Slight delay to ensure the bot is fully connected to Facebook servers
     setTimeout(() => {
-      api.sendMessage("✅ **Bot is Online!**\n\nYour service has been successfully restarted, and all new files/commands have been loaded.", myID);
-    }, 7000);
+      api.sendMessage("✅ **Bot is Online!**\n\nAll commands and files have been successfully reloaded from GitHub.", myID);
+    }, 10000);
   },
 
   onStart: async function ({ api, event }) {
-    const RENDER_API_KEY = process.env.Render_API_TOKEN; // Fetches from Render Environment Variables
-    const SERVICE_ID = "srv-d6790rp5pdvs73e976hg"; // Your specific Service ID
+    const RENDER_API_KEY = process.env.Render_API_TOKEN; 
+    const SERVICE_ID = "srv-d6790rp5pdvs73e976hg"; 
 
     if (!RENDER_API_KEY) {
-      return api.sendMessage("❌ Error: 'Render_API_TOKEN' not found. Please perform a manual deploy from the Render Dashboard once.", event.threadID);
+      return api.sendMessage("❌ Error: 'Render_API_TOKEN' not found. Please manually deploy from Render Dashboard one last time to sync variables.", event.threadID);
     }
 
     try {
-      // Pre-restart notification
-      await api.sendMessage("⏳ **Bot is restarting...**\n\nPlease wait. This usually takes 2-3 minutes. I will send you a personal message once I am back online.", event.threadID);
+      // Immediate notification before the process starts shutting down
+      await api.sendMessage("⏳ **Bot is restarting...**\n\nConnection will be cut shortly. Please wait 2-3 minutes. I will DM you when I am back online.", event.threadID);
 
-      // Sending the request to Render API to clear cache and redeploy
+      // We use 'clearCache: "clear"' to force Render to pull fresh files from GitHub
       await axios.post(`https://api.render.com/v1/services/${SERVICE_ID}/deploys`, 
       { clearCache: "clear" }, 
       {
@@ -46,6 +46,7 @@ module.exports = {
         }
       });
 
+      console.log("Redeploy signal sent to Render successfully.");
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
       api.sendMessage(`❌ Redeploy Error: ${errorMsg}`, event.threadID);
