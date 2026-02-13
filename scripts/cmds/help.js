@@ -25,44 +25,47 @@ module.exports = {
       }
 
       if (!cmd) {
-        return message.reply(❌ Command "${query}" not found.);
+        return message.reply(`❌ Command "${query}" not found.`);
       }
 
       const cfg = cmd.config;
       const cmdName = cfg.name;
 
-      // Special clean format for "prefix" command (as you requested)
+      // Special clean format for "prefix" command
       if (cmdName === "prefix") {
         return message.reply(
-          Help for command: ${prefix}${cmdName}\n\n +
-          ${prefix}${cmdName} <new prefix> : Change prefix in current box\n +
-          ${prefix}${cmdName} <new prefix> -g : Change system prefix\n +
-          ${prefix}${cmdName} reset : Reset box prefix to default
+          `Help for command: ${prefix}${cmdName}\n\n` +
+          `${prefix}${cmdName} <new prefix> : Change prefix in current box\n` +
+          `${prefix}${cmdName} <new prefix> -g : Change system prefix\n` +
+          `${prefix}${cmdName} reset : Reset box prefix to default`
         );
       }
 
-      // Default format for all other commands
+      // Default format for other commands
       const desc = cfg.longDescription || cfg.shortDescription || "No description available.";
       const aliases = cfg.aliases?.length ? cfg.aliases.join(", ") : "None";
-      const guideText = (typeof cfg.guide === "string" ? cfg.guide : cfg.guide?.en || "")
+
+      let guideText = (typeof cfg.guide === "string" ? cfg.guide : (cfg.guide?.en || ""))
         .replace(/{pn}/g, prefix)
-        .trim() || ${prefix}${cmdName};
+        .trim();
+
+      if (!guideText) guideText = `${prefix}${cmdName}`;
 
       return message.reply(
-        Help for command: ${prefix}${cmdName}\n\n +
-        Description: ${desc}\n +
-        Aliases: ${aliases}\n +
-        Usage:\n${guideText}
+        `Help for command: ${prefix}${cmdName}\n\n` +
+        `Description: ${desc}\n` +
+        `Aliases: ${aliases}\n` +
+        `Usage:\n${guideText}`
       );
     }
 
-    // ─── FULL MENU ─── (simple list version)
-    let menuText = ✦ LIGHT BOT COMMANDS ✦\n +
-                   Prefix: ${prefix}\n +
-                   Total commands: ${allCommands.size}\n +
-                   ────────────────────\n\n;
+    // ─── FULL MENU ───
+    let menuText = `✦ LIGHT BOT COMMANDS ✦\n` +
+                   `Prefix: ${prefix}\n` +
+                   `Total commands: ${allCommands.size}\n` +
+                   `────────────────────\n\n`;
 
-    // Group by category (optional - can be removed if you want flat list)
+    // Group commands by category
     const categories = {};
     for (const [name, cmd] of allCommands) {
       const cat = (cmd.config.category || "others").toLowerCase();
@@ -75,16 +78,18 @@ module.exports = {
       .sort()
       .forEach(cat => {
         const cmds = categories[cat].sort();
-        menuText += 【 ${cat.toUpperCase()} 】\n;
+        menuText += `【 ${cat.toUpperCase()} 】\n`;
+
         cmds.forEach(name => {
-          menuText += • ${prefix}${name}\n;
+          menuText += `• ${prefix}${name}\n`;
         });
+
         menuText += "\n";
       });
 
-    menuText += ────────────────────\n +
-                Type ${prefix}help <command> to see details\n +
-                Example: ${prefix}help prefix;
+    menuText += `────────────────────\n` +
+                `Type ${prefix}help <command> to see details\n` +
+                `Example: ${prefix}help prefix`;
 
     return message.reply(menuText);
   }
