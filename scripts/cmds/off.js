@@ -4,12 +4,11 @@ module.exports = {
 		version: "1.0",
 		author: "Siam",
 		role: 2,
-		category: "system",
-		shortDescription: "Turn bot off"
+		category: "system"
 	},
 
-	onStart: async function ({ message }) {
-		global.GoatBot.botStatus = false;
-		return message.reply("🔴 Bot is now OFF.");
+	onStart: async function ({ api, event }) {
+		global.botOff = true;
+		return api.sendMessage("🔴 Bot is now OFF.", event.threadID);
 	}
 };
