@@ -1,4 +1,4 @@
-.cmd install redeploy.js const axios = require('axios'); // ✅ Lowercase 'const'
+const axios = require('axios'); // ✅ Lowercase 'const'
 
 module.exports = {
   config: {
