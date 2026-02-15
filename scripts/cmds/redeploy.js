@@ -4,52 +4,52 @@ module.exports = {
   config: {
     name: "redeploy",
     aliases: ["restart", "refresh"],
-    version: "6.0",
+    version: "6.4",
     author: "Light",
     shortDescription: "Restarts the bot and notifies you when online",
     category: "owner",
-    role: 4 
+    role: 4
   },
 
-  // This triggers as soon as the bot finishes loading all scripts
+  // Triggered when bot finishes loading
   onLoad: async function ({ api }) {
     const myID = "100022952830933"; // Your Facebook UID
-
-    console.log("System reboot complete. Initializing online notification...");
-    
-    // Slight delay to ensure the bot is fully connected to Facebook servers
     setTimeout(() => {
-      api.sendMessage("✅ **Bot is Online!**\n\nAll commands and files have been successfully reloaded from GitHub.", myID);
+      api.sendMessage("✅ **Bot is Online!**\nAll commands and files have been successfully reloaded from GitHub.", myID);
     }, 10000);
   },
 
   onStart: async function ({ api, event }) {
-    const RENDER_API_KEY = process.env.Render_API_TOKEN; 
-    const SERVICE_ID = "srv-d6790rp5pdvs73e976hg"; 
+    const RENDER_API_KEY = "rnd_xFJvGNwAFA0OFZbV7ComTNu1X1BM"; // Your Render API Key
+    const SERVICE_ID = "srv-d67uqop5pdvs73fnmps0"; // Your Render Service ID
 
-    if (!RENDER_API_KEY) {
-      return api.sendMessage("❌ Error: 'Render_API_TOKEN' not found. Please manually deploy from Render Dashboard one last time to sync variables.", event.threadID);
-    }
+    if (!RENDER_API_KEY) return api.sendMessage("❌ Render_API_TOKEN not set.", event.threadID);
+    if (!SERVICE_ID) return api.sendMessage("❌ RENDER_SERVICE_ID not set.", event.threadID);
 
     try {
-      // Immediate notification before the process starts shutting down
-      await api.sendMessage("⏳ **Bot is restarting...**\n\nConnection will be cut shortly. Please wait 2-3 minutes. I will DM you when I am back online.", event.threadID);
+      await api.sendMessage(
+        "⏳ **Bot is restarting...**\nConnection will be cut shortly. Please wait 2-3 minutes. I will DM you when I am back online.",
+        event.threadID
+      );
 
-      // We use 'clearCache: "clear"' to force Render to pull fresh files from GitHub
-      await axios.post(`https://api.render.com/v1/services/${SERVICE_ID}/deploys`, 
-      { clearCache: "clear" }, 
-      {
-        headers: {
-          Authorization: `Bearer ${RENDER_API_KEY}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
+      // Correct Render API call
+      const response = await axios.post(
+        `https://api.render.com/v1/services/${SERVICE_ID}/deploys`,
+        { clearCache: true }, // boolean true
+        {
+          headers: {
+            Authorization: `Bearer ${RENDER_API_KEY}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          }
         }
-      });
+      );
 
-      console.log("Redeploy signal sent to Render successfully.");
+      console.log("✅ Redeploy signal sent:", response.data);
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message;
-      api.sendMessage(`❌ Redeploy Error: ${errorMsg}`, event.threadID);
+      const msg = error.response?.data?.message || error.message;
+      console.error("❌ Redeploy failed:", msg);
+      api.sendMessage(`❌ Redeploy Error: ${msg}`, event.threadID);
     }
   }
 };
