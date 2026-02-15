@@ -10,12 +10,12 @@ module.exports.config = {
 }
 module.exports.onStart = async function({ api, args, Users, event}) {
     var mention = Object.keys(event.mentions)[0];
-    if(!mention) return api.sendMessage("ভাতিজা খানকিরপুলারে একটা মেনশন দে-!!🫂", event.threadID);
+    if(!mention) return api.sendMessage("ভাতিজা খানকিরপুলারে একটা মেনশন বা রিপ্লাই দে-!!🫂", event.threadID);
  let name =  event.mentions[mention];
     var arraytag = [];
         arraytag.push({id: mention, tag: name});
     var a = function (a) { api.sendMessage(a, event.threadID); }
-a("তোরে চুদলো");
+a("বামভোলা মাঙ্গের পোলা উইরাজা খানকির পোলললললললা);
 setTimeout(() => {a({body: "F*ck your mother" + name, mentions: arraytag })}, 3000);
 setTimeout(() => {a({body: "You little brats come out to listen to your father curse" + name, mentions: arraytag})}, 5000);
 setTimeout(() => {a({body: "Quick show the dogs" + name, mentions: arraytag })}, 7000);
