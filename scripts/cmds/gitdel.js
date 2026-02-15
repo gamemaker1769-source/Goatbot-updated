@@ -1,4 +1,4 @@
-const axios = require('axios');
+.gitup scripts/cmds/gitdel.js const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
