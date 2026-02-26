@@ -1,64 +1,74 @@
 module.exports = {
- config: {
- name: "antiout",
- version: "1.0",
- author: "Siam",
- countDown: 5,
- role: 1, // Only admin can use this command
- shortDescription: {
- en: "Prevent members from leaving the group"
- },
- longDescription: {
- en: "Enable/disable anti-out feature that automatically adds back members who leave the group"
- },
- category: "admin",
- guide: {
- en: "{pn} [on|off] - Turn anti-out feature on or off"
- }
- },
+  config: {
+    name: "antiout",
+    version: "1.0",
+    author: "Siam",
+    countDown: 5,
+    role: 1,
+    shortDescription: {
+      en: "Prevent members from leaving the group"
+    },
+    longDescription: {
+      en: "Enable/disable anti-out feature that automatically adds back members who leave the group"
+    },
+    category: "admin",
+    guide: {
+      en: "{pn} [on|off] - Turn anti-out feature on or off"
+    }
+  },
 
- langs: {
- en: {
- turnedOn: "🛡️ Anti-out on 🟢",
- turnedOff: "🛡️ Anti-out off 🔴",
- missingPermission: "❌ Sorry boss! I couldn't add the user back.\nUser %1 might have blocked me or doesn't have messenger option enabled.",
- addedBack: ""
- }
- },
+  langs: {
+    en: {
+      turnedOn: "🛡️ Anti-out on 🟢",
+      alreadyOn: "🛡️ Anti-out is already turned ON!",
+      turnedOff: "🛡️ Anti-out off 🔴",
+      alreadyOff: "🛡️ Anti-out is already turned OFF!",
+      missingPermission: "❌ Sorry boss! I couldn't add the user back.\nUser %1 might have blocked me or doesn't have messenger option enabled.",
+      addedBack: ""
+    }
+  },
 
- onStart: async function ({ args, message, event, threadsData, getLang }) {
- if (args[0] === "on") {
- await threadsData.set(event.threadID, true, "data.antiout");
- message.reply(getLang("turnedOn"));
- } 
- else if (args[0] === "off") {
- await threadsData.set(event.threadID, false, "data.antiout");
- message.reply(getLang("turnedOff"));
- }
- else {
- message.reply("Please specify 'on' or 'off' to enable/disable anti-out feature");
- }
- },
+  onStart: async function ({ args, message, event, threadsData, getLang }) {
+    const currentState = await threadsData.get(event.threadID, "data.antiout");
 
- onEvent: async function ({ event, api, threadsData, usersData, getLang }) {
- if (event.logMessageType !== "log:unsubscribe") 
- return;
+    if (args[0] === "on") {
+      if (currentState === true) {
+        return message.reply(getLang("alreadyOn"));
+      }
+      await threadsData.set(event.threadID, true, "data.antiout");
+      message.reply(getLang("turnedOn"));
+    } 
+    else if (args[0] === "off") {
+      if (currentState === false || currentState === undefined) {
+        return message.reply(getLang("alreadyOff"));
+      }
+      await threadsData.set(event.threadID, false, "data.antiout");
+      message.reply(getLang("turnedOff"));
+    }
+    else {
+      message.reply("Please specify 'on' or 'off' to enable/disable anti-out feature");
+    }
+  },
 
- const antiout = await threadsData.get(event.threadID, "data.antiout");
- if (!antiout) 
- return;
+  onEvent: async function ({ event, api, threadsData, usersData, getLang }) {
+    if (event.logMessageType !== "log:unsubscribe") 
+      return;
 
- if (event.logMessageData.leftParticipantFbId === api.getCurrentUserID()) 
- return;
+    const antiout = await threadsData.get(event.threadID, "data.antiout");
+    if (!antiout) 
+      return;
 
- const name = await usersData.getName(event.logMessageData.leftParticipantFbId);
- 
- try {
- await api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID);
- api.sendMessage(getLang("addedBack", name), event.threadID);
- } 
- catch (error) {
- api.sendMessage(getLang("missingPermission", name), event.threadID);
- }
- }
+    if (event.logMessageData.leftParticipantFbId === api.getCurrentUserID()) 
+      return;
+
+    const name = await usersData.getName(event.logMessageData.leftParticipantFbId);
+
+    try {
+      await api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID);
+      // No extra message needed as per your original code for addedBack
+    } 
+    catch (error) {
+      api.sendMessage(getLang("missingPermission", name), event.threadID);
+    }
+  }
 };
