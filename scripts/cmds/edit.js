@@ -1,63 +1,85 @@
 const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
+
+const apiUrl = "https://raw.githubusercontent.com/Saim-x69x/sakura/main/ApiUrl.json";
+
+async function getApiUrl() {
+  const res = await axios.get(apiUrl);
+  return res.data.apiv3;
+}
+
+async function urlToBase64(url) {
+  const res = await axios.get(url, { responseType: "arraybuffer" });
+  return Buffer.from(res.data).toString("base64");
+}
 
 module.exports = {
   config: {
     name: "edit",
-    aliases: ["imgedit"],
-    version: "2.4",
-    author: "Neoaz ゐ", //API by RIFAT
-    countDown: 15,
+    version: "1.0",
+    author: "Siam", //API by Kay
+    countDown: 5,
     role: 0,
-    shortDescription: { en: "Edit image with Seedream V4" },
-    longDescription: { en: "Edit or modify an existing image using Seedream V4 Edit AI model" },
-    category: "image",
-    guide: {
-      en: "Reply to an image with: {pn} <prompt>"
-    }
+    shortDescription: "Edit an image using text prompt",
+    longDescription: "Only edits an existing image. Must reply to an image.",
+    guide: "{p}edit <prompt> (reply to an image)"
   },
 
-  onStart: async function ({ message, event, api, args }) {
-    const hasPhotoReply = event.type === "message_reply" && event.messageReply?.attachments?.[0]?.type === "photo";
-
-    if (!hasPhotoReply) {
-      return message.reply("Please reply to an image to edit.");
-    }
-
+  onStart: async function ({ api, event, args, message }) {
+    const repliedImage = event.messageReply?.attachments?.[0];
     const prompt = args.join(" ").trim();
-    if (!prompt) {
-      return message.reply("Please provide a prompt.");
+
+    if (!repliedImage || repliedImage.type !== "photo") {
+      return message.reply(
+        "❌ Please reply to an image to edit it.\n\nExample:\n/edit make it anime style"
+      );
     }
 
-    const model = "seedream v4 edit";
-    const imageUrl = event.messageReply.attachments[0].url;
+    if (!prompt) {
+      return message.reply("❌ Please provide an edit prompt.");
+    }
+
+    const processingMsg = await message.reply("🖌️ Editing image...");
+
+    const imgPath = path.join(
+      __dirname,
+      "cache",
+      `${Date.now()}_edit.jpg`
+    );
 
     try {
-      api.setMessageReaction("⏳", event.messageID, () => {}, true);
+      const API_URL = await getApiUrl();
 
-      const res = await axios.get("https://fluxcdibai-1.onrender.com/generate", {
-        params: { prompt, model, imageUrl },
-        timeout: 120000
+      const payload = {
+        prompt: `Edit the given image based on this description:\n${prompt}`,
+        images: [await urlToBase64(repliedImage.url)],
+        format: "jpg"
+      };
+
+      const res = await axios.post(API_URL, payload, {
+        responseType: "arraybuffer",
+        timeout: 180000
       });
 
-      const data = res.data;
-      const resultUrl = data?.data?.imageResponseVo?.url;
+      await fs.ensureDir(path.dirname(imgPath));
+      await fs.writeFile(imgPath, Buffer.from(res.data));
 
-      if (!resultUrl) {
-        api.setMessageReaction("❌", event.messageID, () => {}, true);
-        return message.reply("Failed to edit image.");
-      }
-
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
+      await api.unsendMessage(processingMsg.messageID);
 
       await message.reply({
-        body: "Image edited 🐦",
-        attachment: await global.utils.getStreamFromURL(resultUrl)
+        body: `✅ Image edited successfully\nPrompt: ${prompt}`,
+        attachment: fs.createReadStream(imgPath)
       });
 
-    } catch (err) {
-      console.error(err);
-      api.setMessageReaction("❌", event.messageID, () => {}, true);
-      return message.reply("Error while editing image.");
+    } catch (error) {
+      console.error("EDIT Error:", error?.response?.data || error.message);
+      await api.unsendMessage(processingMsg.messageID);
+      message.reply("❌ Failed to edit image. Try again later.");
+    } finally {
+      if (fs.existsSync(imgPath)) {
+        await fs.remove(imgPath);
+      }
     }
   }
 };
